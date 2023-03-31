@@ -13,6 +13,9 @@ from pathlib import Path
 
 
 def create_cache_dir():
+    """
+    Erstellt einen Ordner namens "cache", sofern dieser noch nicht existiert.
+    """
     try:
         os.mkdir("cache")
         print("Cache folder was created.")
@@ -82,13 +85,18 @@ class Sensor:
             self.average: dict[str, set: SensorData] = {}
 
     def load_data(self):
+        """
+        Lädt Daten, sortiert sie und berechnet das Maximum, das Minimum und den Durchschnitt.
+        """
         self.sensor_data = self.sort_data()
         self.maximum = self.calc_maximum()
         self.minimum = self.calc_minimum()
         self.average = self.calc_avg()
 
-    # Lädt die Sensor-Daten in der Reihenfolge des Datums.
     def sort_data(self) -> dict[str, list[SensorData]]:
+        """
+        Lädt die Sensor-Daten in der Reihenfolge des Datums.
+        """
         sorted_data = {}
         res = database_connection.execute(f"SELECT * FROM data WHERE sensor_id=? ORDER BY `time`", [self.id])
         for row in res:
@@ -97,8 +105,10 @@ class Sensor:
             sorted_data.get(row[2]).append(SensorData(datetime.datetime.fromisoformat(row[0]), row[3], row[2], row[1]))
         return sorted_data
 
-    # Lädt alle maximalen Werte der Sensor-Daten.
     def calc_maximum(self) -> dict[str, set: SensorData]:
+        """
+        Lädt alle maximalen Werte der Sensor-Daten.
+        """
         maximum = {}
         res = database_connection.execute(
             f"SELECT *, MAX(CAST(value AS FLOAT)) as max, strftime(?, time) as month "
@@ -113,8 +123,10 @@ class Sensor:
             maximum[row[2]].add(SensorData(datetime.datetime.fromisoformat(row[0]), row[3], row[2], row[1]))
         return maximum
 
-    # Lädt alle minimalen Werte der Sensor-Daten.
     def calc_minimum(self) -> dict[str, set: SensorData]:
+        """
+        Lädt alle minimalen Werte der Sensor-Daten.
+        """
         minimum = {}
         res = database_connection.execute(
             f"SELECT *, MIN(CAST(value AS FLOAT)) as min, strftime(?, time) as month "
@@ -129,8 +141,10 @@ class Sensor:
             minimum[row[2]].add(SensorData(datetime.datetime.fromisoformat(row[0]), row[3], row[2], row[1]))
         return minimum
 
-    # Lädt die durchschnittlichen Sensor-Daten.
     def calc_avg(self) -> dict[str, set: SensorData]:
+        """
+        Lädt die durchschnittlichen Sensor-Daten.
+        """
         avg = {}
         res = database_connection.execute(
             f"SELECT *, AVG(CAST(value AS FLOAT)) as avg, strftime(?, time) as month "
@@ -148,8 +162,10 @@ class Sensor:
         return f"(id={self.id} type={self.type}, lat={self.lat}, lon={self.lon}, indoor={self.indoor}, sensor_data={self.sensor_data}, sorted_data={self.sorted_data}, maximum={self.maximum}, minimum={self.minimum}, average={self.average})"
 
 
-# Erstellt die Tabellen für die Datenbank.
 def create_tables():
+    """
+    Legt die Tabellen für die Datenbank an, wenn sie noch nicht existieren, und fügt einige Standardwerte hinzu
+    """
     database_connection.execute(
         "CREATE TABLE IF NOT EXISTS sensor_type(sensor_id INTEGER, sensor_type TEXT, indoor INT, PRIMARY KEY (sensor_id))")
 
@@ -184,8 +200,10 @@ def create_tables():
     database_connection.commit()
 
 
-# Importiert die Typen der Sensoren
 def import_sensor_types():
+    """
+    Importiert Sensor-Typen von den sensor.community-API und speichert sie in einer Datenbanktabelle
+    """
     print("Importing Sensor types...")
     r = requests.get("https://data.sensor.community/static/v2/data.json")
     json = r.json()
@@ -204,8 +222,11 @@ def import_sensor_types():
     print("Imported Sensor types.")
 
 
-# Gibt eine Liste von jedem Tag des jeweiligen Jahres zurück.
 def get_date_range_year(year: int) -> list[datetime.date]:
+    """
+    Gibt eine Liste von Datumsobjekten zurück, die alle Tage des angegebenen Jahres enthalten.
+    Falls das Jahr das aktuelle Jahr ist, wird der letzte Tag durch den heutigen Tag ersetzt.
+    """
     int(year)
     first_day = datetime.datetime(year=year, month=1, day=1)
     last_day = datetime.datetime(year=year, month=12, day=31)
@@ -215,8 +236,10 @@ def get_date_range_year(year: int) -> list[datetime.date]:
     return get_date_range(first_day, last_day)
 
 
-# Gibt eine Liste die den Bereich zwischen from_time und to_time darstellt zurück.
 def get_date_range(from_time: datetime.datetime, to_time: datetime.datetime) -> list[datetime]:
+    """
+    Gibt eine Liste aller Daten zwischen zwei gegebenen Datumsobjekten zurück.
+    """
     date_list = []
 
     for i in range(int((to_time - from_time).days) + 1):
@@ -225,8 +248,11 @@ def get_date_range(from_time: datetime.datetime, to_time: datetime.datetime) -> 
     return date_list
 
 
-# Lädt eine einzelne CSV-Datei eines Sensors.
 def get_csv_dump(date: datetime.date, sensor_type: str, sensor_id: int, indoor: int):
+    """
+    Lädt eine CSV-Datei aus dem Cache-Ordner, wenn diese existiert oder vom Server herunter und gibt den Inhalt als csv.reader zurück.
+    Der Dateiname setzt sich aus Datum, Sensortyp und Sensor-ID zusammen.
+    """
     filename = "cache/" + ("%date%_%sensor_type%_sensor_%id%" + ["", "_indoor"][indoor > 0] + ".csv") \
         .replace("%date%", date.strftime("%Y-%m-%d")) \
         .replace("%sensor_type%", sensor_type) \
@@ -252,17 +278,13 @@ def get_csv_dump(date: datetime.date, sensor_type: str, sensor_id: int, indoor: 
     return csv.reader(open(filename, 'r'), dialect='excel')
 
 
-# Erstellt den Cache-Ordner für die csv-Dateien.
-def create_cache_dir():
-    try:
-        os.mkdir("cache")
-        print("Cache folder was created.")
-    except FileExistsError:
-        print("Cache folder already exists.")
-
-
-# Leert den Cache-Ordner
 def clear_cache(clear_all: bool = False):
+    """
+    Löscht alle Dateien im Ordner "cache".
+    Wenn das Argument clear_all auf True gesetzt ist,
+    werden auch alle Daten aus der Datenbank gelöscht.
+    """
+
     print("Clearing cache...")
     g = os.scandir("./cache")
     for t in g:
@@ -279,6 +301,9 @@ def clear_cache(clear_all: bool = False):
 
 
 def load_sensor_cache():
+    """
+    Leert den Sensor-Cache und füllt ihn mit den IDs der in der Datenbank vorhandenen Sensoren
+    """
     sensor_id_cache.clear()
     for id in database_connection.execute("SELECT id FROM sensor").fetchall():
         sensor_id_cache.add(id[0])
@@ -286,16 +311,25 @@ def load_sensor_cache():
 
 
 def percentage(g: float, w: float) -> float:
-    return w / g
+    """
+    Brechnet das Verhältnis von w zu g und gibt das Ergebnis als float zurück
+    """
+    return float(w) / float(g)
 
 
-# Prüft, ob ein Sensor bereits in der Datenbank existiert.
 def exists_in_database(id: int) -> bool:
+    """
+    Prüft, ob ein Sensor bereits in der Datenbank existiert.
+    """
     int(id)
     return len(database_connection.execute(f"SELECT id FROM sensor WHERE id=?", [id]).fetchall()) > 0
 
 
 def get_sensor_types() -> set[str]:
+    """
+    Gibt ein Set von Sensor-Typen zurück,
+    die in der Datenbank gespeichert sind.
+    """
     types = set()
     res = database_connection.execute("SELECT DISTINCT (type) FROM sensor_search_types ORDER BY type").fetchall()
     for row in res:
@@ -304,6 +338,10 @@ def get_sensor_types() -> set[str]:
 
 
 def has_data_in_year(id: int, year: int) -> bool:
+    """
+    überprüft, ob ein Sensor mit einer bestimmten ID im angegebenen Jahr Daten hat und gibt True zurück,
+    wenn Daten vorhanden sind, andernfalls False.
+    """
     int(id)
     int(year)
     return len(database_connection.execute("SELECT sensor_id FROM data WHERE "
@@ -311,8 +349,17 @@ def has_data_in_year(id: int, year: int) -> bool:
                                            f"AND sensor_id={id}").fetchall()) > 0
 
 
-# Speichert die Daten in der Datenbank
 def save_in_database(sid):
+    """
+    Speichert ein Sensor- oder Sensor-Daten-Objekt in der Datenbank.
+    Wenn es sich um ein SensorData-Objekt handelt, werden der Zeitstempel,
+    der Wertname, der Wert und die Sensor-ID in die data-Tabelle eingefügt.
+
+    Wenn es sich um ein Sensor-Objekt handelt, werden die Sensor-ID, der Sensortyp,
+    die Koordinaten und die Indoor-Eigenschaft in die sensor_type- und sensor-Tabellen eingefügt.
+    Die Sensor-Daten werden ebenfalls in die data-Tabelle eingefügt.
+    """
+
     if isinstance(sid, SensorData):
         database_connection.execute("INSERT OR IGNORE INTO data(`time`, value_name, value, sensor_id) VALUES "
                                     "(?, ?, ?, ?)",
@@ -335,8 +382,13 @@ def save_in_database(sid):
     database_connection.commit()
 
 
-# Lädt den Sensor und die Daten aus der Datenbank.
 def get_sensor(id: int) -> Sensor | None:
+    """
+    Ruft die Informationen eines Sensors mit einer bestimmten Sensor-ID aus einer Datenbank ab.
+    Wenn der Sensor in der Datenbank vorhanden ist, wird ein Sensor-Objekt mit der entsprechenden Sensor-ID,
+    dem Sensor-Typ, den Koordinaten und der Indoor-Eigenschaft erstellt und zurückgegeben.
+    Andernfalls gibt die Funktion None zurück.
+    """
     if exists_in_database(id):
         print(f"Loading sensor '{id}' from database...")
         rs = database_connection.execute(
@@ -351,8 +403,13 @@ def get_sensor(id: int) -> Sensor | None:
     return None
 
 
-# Lädt die Daten eines Sensors von der API und trägt sie in der Datenbank ein.
-def load_sensor_data(year: int, sensor_type: str, sensor_id: int, indoor: int, callback) -> Sensor:
+def load_sensor_data(year: int, sensor_type: str, sensor_id: int, indoor: int, callback=None) -> Sensor:
+    """
+    Lädt die Sensor-Daten für einen bestimmten Sensor-Typ und eine Sensor-ID für das angegebene Jahr.
+    Sie ruft eine CSV-Datei ab, verarbeitet die Daten und speichert sie als Sensor-Objekt ab.
+    Die Funktion gibt das Sensor-Objekt zurück.
+    Ein Fortschritts-Callback kann optional angegeben werden.
+    """
     dr = get_date_range_year(year)
     drl = len(dr)
     i = 0
@@ -362,7 +419,8 @@ def load_sensor_data(year: int, sensor_type: str, sensor_id: int, indoor: int, c
 
     # w=g*p
     for i, d in enumerate(dr):
-        callback(percentage(drl, i), drl, i)
+        if callback is not None:
+            callback(percentage(drl, i), drl, i)
         cvs_reader = get_csv_dump(d, sensor_type, sensor_id, indoor)
 
         if cvs_reader is None:
@@ -382,14 +440,15 @@ def load_sensor_data(year: int, sensor_type: str, sensor_id: int, indoor: int, c
                 sensor.type = splitted[1]
                 sensor.lat = float(splitted[3])
                 sensor.lon = float(splitted[4])
-                for value in splitted:
+                for vi, value in enumerate(splitted):
                     if vi >= 6:
                         data_list.append(
                             SensorData(datetime.datetime.strptime(splitted[5], date_format), value, value_names[vi],
                                        sensor_id))
-                    vi += 1
     sensor.sensor_data = data_list
-    callback(1, drl, i)
+
+    if callback is not None:
+        callback(1, drl, i)
     return sensor
 
 
@@ -403,6 +462,13 @@ def delete_from_database(sensor_id: int):
 
 
 def is_indoor(sensor_id: int) -> int | None:
+    """
+    überprüft anhand einer Sensor-ID, ob es sich um einen Indoor- oder Outdoor-Sensor handelt.
+    Die Funktion greift auf eine Datenbankverbindung zu und führt eine SQL-Abfrage auf der Tabelle sensor_type aus,
+    um die Indoor- oder Outdoor-Eigenschaft des Sensors zu ermitteln.
+    Die Funktion gibt als Ergebnis entweder 1 für Indoor, 0 für Outdoor oder None zurück,
+    wenn die Sensor-ID in der Datenbank nicht gefunden wurde oder es ein Problem mit der Datenbankverbindung gibt.
+    """
     int(sensor_id)
     res = database_connection.execute(f"SELECT indoor FROM sensor_type WHERE sensor_id=?", [sensor_id]).fetchone()
     if res is None:
@@ -415,6 +481,15 @@ def is_indoor(sensor_id: int) -> int | None:
 
 
 def find_sensor_type(sensor_id: int, year: int, indoor: int) -> str | None:
+    """
+    Sucht den Typ eines Sensors anhand seiner ID, Jahres und Innen- / Außenanwendung.
+    Falls der Typ in der Datenbank existiert, wird dieser zurückgegeben.
+    Ansonsten wird für das angegebene Jahr nach passenden Sensor-Typen gesucht,
+    indem CSV-Dateien ausgelesen und auf den Sensor hin geprüft werden.
+    Wird ein passender Typ gefunden, wird dieser in die Datenbank eingetragen und zurückgegeben.
+    Andernfalls wird None zurückgegeben.
+    """
+
     int(year)
     int(sensor_id)
     int(indoor)
@@ -448,7 +523,8 @@ def check_connection(timeout: int) -> True:
 
 
 def get_setting(name: str):
-    return database_connection.execute("SELECT value FROM gui_settings WHERE lower(name)=?", [name.lower()]).fetchone()[0]
+    return database_connection.execute("SELECT value FROM gui_settings WHERE lower(name)=?", [name.lower()]).fetchone()[
+        0]
 
 
 def set_setting(name: str, value: str):
