@@ -55,4 +55,13 @@
 
 ## 4. Anlagen
 
-# 
+### Icon des GUIs:
+* Link: [https://sensor.community/favicon.png](https://sensor.community/favicon.png)
+* Datei: ![](https://sensor.community/favicon.png)
+
+#### Strukturen:
+
+* Datenbank-Struktur: ![](./assets/ER-Diagramm.svg)
+* Klassendiagramm: ![](./assets/Klassendiagramm.svg)
+
+
