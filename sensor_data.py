@@ -159,7 +159,7 @@ class Sensor:
         return avg
 
     def __str__(self):
-        return f"(id={self.id} type={self.type}, lat={self.lat}, lon={self.lon}, indoor={self.indoor}, sensor_data={self.sensor_data}, sorted_data={self.sorted_data}, maximum={self.maximum}, minimum={self.minimum}, average={self.average})"
+        return f"(id={self.id} type={self.type}, lat={self.lat}, lon={self.lon}, indoor={self.indoor}, sensor_data={self.sensor_data}, sensor_data={self.sensor_data}, maximum={self.maximum}, minimum={self.minimum}, average={self.average})"
 
 
 def create_tables():
