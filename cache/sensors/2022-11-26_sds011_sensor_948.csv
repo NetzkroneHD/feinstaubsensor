@@ -1,0 +1,2 @@
+sensor_id;sensor_type;location;lat;lon;timestamp;P1;durP1;ratioP1;P2;durP2;ratioP2
+948;SDS011;461;51.436;7.312;2022-11-26T11:21:21;11.93;;;4.00;;

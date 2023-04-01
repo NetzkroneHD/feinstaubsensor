@@ -17,7 +17,7 @@ def create_cache_dir():
     Erstellt einen Ordner namens "cache", sofern dieser noch nicht existiert.
     """
     try:
-        os.mkdir("cache")
+        os.mkdir("cache/sensors")
         print("Cache folder was created.")
     except FileExistsError:
         print("Cache folder already exists.")
@@ -253,7 +253,7 @@ def get_csv_dump(date: datetime.date, sensor_type: str, sensor_id: int, indoor: 
     Lädt eine CSV-Datei aus dem Cache-Ordner, wenn diese existiert oder vom Server herunter und gibt den Inhalt als csv.reader zurück.
     Der Dateiname setzt sich aus Datum, Sensortyp und Sensor-ID zusammen.
     """
-    filename = "cache/" + ("%date%_%sensor_type%_sensor_%id%" + ["", "_indoor"][indoor > 0] + ".csv") \
+    filename = "cache/sensors/" + ("%date%_%sensor_type%_sensor_%id%" + ["", "_indoor"][indoor > 0] + ".csv") \
         .replace("%date%", date.strftime("%Y-%m-%d")) \
         .replace("%sensor_type%", sensor_type) \
         .replace("%id%", str(sensor_id))
@@ -286,7 +286,7 @@ def clear_cache(clear_all: bool = False):
     """
 
     print("Clearing cache...")
-    g = os.scandir("./cache")
+    g = os.scandir("./cache/sensors")
     for t in g:
         if t.name.endswith(".csv"):
             os.remove(t)
