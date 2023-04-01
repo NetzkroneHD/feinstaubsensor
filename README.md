@@ -8,3 +8,7 @@
 ### GUI-Builder:
 1. "`pip install pygubu-designer`"
 2. "`.\venv\Scripts\pygubu-designer.exe`"
+
+
+### Ausführung:
+"`python .\sensor_gui.py`"
