@@ -209,7 +209,7 @@ def import_sensor_types():
     json = r.json()
     for key in json:
         try:
-            name = key["sensor"]["sensor_type"]["name"].lower()
+            name = key["sensor"]["sensor_type"]["name"].lower().replace(" ", "_")
             id = int(key["sensor"]["id"])
             indoor = key["location"]["indoor"]
             database_connection.execute(f"INSERT OR IGNORE INTO sensor_search_types(type) VALUES ('{name}')")
