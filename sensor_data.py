@@ -111,11 +111,11 @@ class Sensor:
         """
         maximum = {}
         res = database_connection.execute(
-            f"SELECT *, MAX(CAST(value AS FLOAT)) as max, strftime(?, time) as month "
+            f"SELECT *, MAX(CAST(value AS FLOAT)) as max, strftime((SELECT value FROM gui_settings WHERE name='sql_date'), time) as month "
             f"FROM data "
             f"WHERE sensor_id=? AND value <> '' "
             f"AND value IS NOT 'nan' "
-            f"GROUP BY month, value_name;", (get_setting("sql_date"), self.id)).fetchall()
+            f"GROUP BY month, value_name;", [self.id]).fetchall()
 
         for row in res:
             if maximum.get(row[2]) is None:
@@ -129,11 +129,11 @@ class Sensor:
         """
         minimum = {}
         res = database_connection.execute(
-            f"SELECT *, MIN(CAST(value AS FLOAT)) as min, strftime(?, time) as month "
+            f"SELECT *, MIN(CAST(value AS FLOAT)) as min, strftime((SELECT value FROM gui_settings WHERE name='sql_date'), time) as month "
             f"FROM data "
             f"WHERE sensor_id=? AND value <> '' "
             f"AND value IS NOT 'nan' "
-            f"GROUP BY month, value_name;", (get_setting("sql_date"), self.id)).fetchall()
+            f"GROUP BY month, value_name;", [self.id]).fetchall()
 
         for row in res:
             if minimum.get(row[2]) is None:
@@ -147,11 +147,11 @@ class Sensor:
         """
         avg = {}
         res = database_connection.execute(
-            f"SELECT *, AVG(CAST(value AS FLOAT)) as avg, strftime(?, time) as month "
+            f"SELECT *, AVG(CAST(value AS FLOAT)) as avg, strftime((SELECT value FROM gui_settings WHERE name='sql_date'), time) as month "
             f"FROM data "
             f"WHERE sensor_id=? AND value <> '' "
             f"AND value IS NOT 'nan' "
-            f"GROUP BY month, value_name;", (get_setting("sql_date"), self.id)).fetchall()
+            f"GROUP BY month, value_name;", [self.id]).fetchall()
         for row in res:
             if avg.get(row[2]) is None:
                 avg[row[2]] = set()
