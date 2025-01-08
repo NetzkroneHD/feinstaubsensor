@@ -269,7 +269,9 @@ def get_csv_dump(date: datetime.date, sensor_type: str, sensor_id: int, indoor: 
         "%sensor_type%", sensor_type).replace("%id%", str(sensor_id))
     response = requests.get(url)
     if not response.ok:
+        print(f"Error while downloading '{url}'")
         return
+    print(f"Downloading '{url}'...")
 
     file = open(filename, 'wb')
     file.write(response.content)

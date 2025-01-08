@@ -1,3 +1,5 @@
-matplotlib==3.7.1
-Pillow==9.4.0
-requests==2.28.2
+matplotlib~=3.7.1
+requests~=2.28.2
+Pillow~=9.4.0
+numpy~=1.26.4
+ctypes~=1.0.2

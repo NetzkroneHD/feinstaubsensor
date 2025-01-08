@@ -15,6 +15,7 @@ import requests
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
+from tkinter import messagebox
 
 import sensor_data
 from sensor_data import Sensor
@@ -24,10 +25,17 @@ empty_cache = 0
 sensor_search_timeout = 60
 sensor_thread_timeout = 5
 
-
 # Erstellt ein Fenster mit einer MessageBox
 def message_box(title: str, text: str, style: int):
-    return ctypes.windll.user32.MessageBoxW(0, text, title, style)
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    if style == 0:  # Information
+        messagebox.showinfo(title, text)
+    elif style == 1:  # Warning
+        messagebox.showwarning(title, text)
+    elif style == 2:  # Error
+        messagebox.showerror(title, text)
+    root.destroy()
 
 
 # Repräsentiert den Status des Download-prozesses
