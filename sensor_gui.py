@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ctypes
 import datetime
 import enum
 import threading
