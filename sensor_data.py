@@ -6,6 +6,8 @@ import functools
 import os
 import sqlite3
 import threading
+import gzip
+import shutil
 
 import requests
 
@@ -24,12 +26,11 @@ def create_cache_dir():
 
 
 # https://archive.sensor.community/2022/2022-01-01/2022-01-01_bme280_sensor_113.csv
-sensor_archive_format = "https://archive.sensor.community/%year%/%date%/%date%_%sensor_type%_sensor_%id%.csv"
-sensor_archive_format_indoor = "https://archive.sensor.community/%year%/%date%/%date%_%sensor_type%_sensor_%id%_indoor.csv"
+sensor_archive_format = "https://archive.sensor.community/%year%/%date%/%date%_%sensor_type%_sensor_%id%.csv.gz"
+sensor_archive_format_indoor = "https://archive.sensor.community/%year%/%date%/%date%_%sensor_type%_sensor_%id%_indoor.csv.gz"
 
 # https://archive.sensor.community/2023-01-01/2023-01-01_bme280_sensor_113.csv
-sensor_archive_format_current_year = "https://archive.sensor.community/%date%/%date%_%sensor_type%_sensor_%id%.csv"
-sensor_archive_format_indoor_current_year = "https://archive.sensor.community/%date%/%date%_%sensor_type%_sensor_%id%_indoor.csv"
+sensor_archive_format_current_year = "https://archive.sensor.community/%date%/%date%_%sensor_type%_sensor_%id%.csv.gz"
 
 date_format = "%Y-%m-%dT%H:%M:%S"
 
@@ -258,6 +259,8 @@ def get_csv_dump(date: datetime.date, sensor_type: str, sensor_id: int, indoor: 
         .replace("%sensor_type%", sensor_type) \
         .replace("%id%", str(sensor_id))
 
+    gz_filename = filename + ".gz"
+
     if Path(filename).exists():
         return csv.reader(open(filename, 'r'), dialect='excel')
 
@@ -273,9 +276,12 @@ def get_csv_dump(date: datetime.date, sensor_type: str, sensor_id: int, indoor: 
         return
     print(f"Downloading '{url}'...")
 
-    file = open(filename, 'wb')
-    file.write(response.content)
-    file.close()
+    with open(gz_filename, 'wb') as file:
+        file.write(response.content)
+
+    with gzip.open(gz_filename, 'rb') as f_in:
+        with open(filename, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
     return csv.reader(open(filename, 'r'), dialect='excel')
 
